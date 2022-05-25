@@ -25,8 +25,10 @@ func main() {
 
 	})
 
+	// Load Image from hbs Form
 	app_web.Post("/", func(c *fiber.Ctx) error {
 
+		// if file have some issue then throw an exception called StatusInternalServerError; along with error message and error code
 		file, err := c.FormFile("image")
 		if err != nil {
 
@@ -43,6 +45,8 @@ func main() {
 				"message": errors.New("file might be corrupted"),
 			})
 		}
+
+		// Save image in local.. again if any issue the n throw exception
 
 		err = c.SaveFile(file, fmt.Sprintf("./%s", file.Filename))
 		if err != nil {
@@ -61,6 +65,7 @@ func main() {
 			})
 		}
 
+		// Create new file or open image file
 		FileInfo, err := os.OpenFile(file.Filename, os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
 
@@ -79,8 +84,10 @@ func main() {
 
 		}
 
+		// close the file descriptor
 		defer FileInfo.Close()
 
+		// check whelther file exists
 		_, err = os.Stat(FileInfo.Name())
 		if os.IsExist(err) {
 
@@ -98,6 +105,7 @@ func main() {
 			})
 		}
 
+		// decode image file Image File Format
 		_content, err := png.Decode(FileInfo)
 		if err != nil {
 			code := fiber.StatusInternalServerError
@@ -114,8 +122,11 @@ func main() {
 			})
 		}
 
+		// Set Image allow to you to set image pixel values
 		zoom_pixels.SetImage(_content)
-		zoom_pixels.Zoom_KTime(20, FileInfo)
+
+		// Zoom K Times @params {Level of Zooom and File }
+		zoom_pixels.Zoom_KTime(5, FileInfo)
 
 		return c.Render("index", fiber.Map{
 			"Title": "PixelsMetrica",
