@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+</head>
+<body>
+    <h2 style="display: flex;position: relative;left: 38pc;top: 9pc;"> {{.Title}} </h2>
+    <span style="position: absolute;top: 13pc;left: 39pc;display: flex;"> Uplaod any image </span>
+    <form class="imageload" action="" method="post" enctype="multipart/form-data" style="display: flex;position: absolute;top: 18pc;left: 35pc;">
+        <input type="file" name="image" class="inputImg" accept="image/*">
+        <button type="submit" class="btn btn-primary upload"> Uplaod </button>
+    </form>
+    <div class="preview" style="position: absolute;display: flex;top: 24pc;left: 38pc;"></div>
+    <script>
+        const _i01 = document.getElementsByClassName('inputImg')[0];
+        const _b01 = document.getElementsByClassName('upload')[0];
+        const _d01 = document.getElementsByClassName('preview')[0];
+
+        _i01.addEventListener('change', (event_File)=>{
+            let file = event_File.target.files[0];
+            let img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            _d01.append(img);
+        });
+
+    </script>
+</body>
+</html>
