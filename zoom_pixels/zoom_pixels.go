@@ -38,6 +38,11 @@ var deltaPixelsAddOps Pixel_Diff
 // sorted picture pixels values
 var zoom []Pixel_Diff
 
+var deltaInverse Pixel_Diff
+var deltaInverseOps Pixel_Diff
+var deltaInverseSubOps Pixel_Diff
+var invZoom []Pixel_Diff
+
 // Zoom_KTimes @Parameters( Level of Zoom, File Object)
 // Zoom provide entry point for zoom calculation
 
@@ -251,4 +256,85 @@ func ZoomPicture(file *os.File, newPicture *image.Paletted) {
 		log.Fatalln("picture encode error:", err)
 		return
 	}
+}
+
+func ZoomOutPixels(file *os.File, level int) {
+
+	for i := 0; i < GetImage().Bounds().Max.X; i++ {
+		for j := 0; j < GetImage().Bounds().Max.Y; j++ {
+
+			first := Pixels_Info{
+				Value: GetImage().At(i, j),
+			}
+
+			second := Pixels_Info{
+				Value: GetImage().At(i, j),
+			}
+
+			// convert Pixel Value to RGBA color
+			colorUnit_r, colorUnit_g, colorUnit_b, colorUnit_a := first.Value.RGBA()
+			colorUnit_r0, colorUnit_g0, colorUnit_b0, colorUnit_a0 := second.Value.RGBA()
+
+			// if RGBA color is white then ignore
+			if reflect.DeepEqual(colorUnit_r, uint32(0)) && reflect.DeepEqual(colorUnit_g, uint32(0)) && reflect.DeepEqual(colorUnit_b, uint32(0)) && reflect.DeepEqual(colorUnit_a, uint32(0)) {
+				continue
+			}
+
+			if reflect.DeepEqual(colorUnit_a0, uint32(0)) && reflect.DeepEqual(colorUnit_r0, uint32(0)) && reflect.DeepEqual(colorUnit_g0, uint32(0)) && reflect.DeepEqual(colorUnit_b0, uint32(0)) {
+				continue
+			}
+
+			deltaInverse = InverseAddition(colorUnit_r, colorUnit_g, colorUnit_b, colorUnit_a, colorUnit_r0, colorUnit_g0, colorUnit_b0, colorUnit_a0)
+			deltaInverseOps = InverseMultiplacate(deltaInverse)
+			deltaInverseSubOps = InverseSubstract(deltaInverse)
+
+			p, q, r := NewImage(deltaPixels, deltaPixelsOps, deltaPixelsAddOps, i)
+
+			u, v := Is_Sort(p, q, r)
+
+			invZoom = append(invZoom, u, v)
+		}
+	}
+
+	newPicture := copy_pixels()
+	ZoomPicture(file, newPicture)
+}
+
+func InverseAddition(r, g, b, a uint32, r0, g0, b0, a0 uint32) Pixel_Diff {
+
+	add_r := r + r0
+	add_g := g + g0
+	add_b := b + b0
+	add_a := a + a0
+
+	if r0 > r && g0 > g && b0 > b && a0 > a {
+		return Pixel_Diff{r: uint32(add_r), g: uint32(add_g), b: uint32(add_b), a: uint32(add_a)}
+	}
+
+	add_r = r0 + r
+	add_g = g0 + g
+	add_b = b0 + b
+	add_a = a0 + a
+
+	return Pixel_Diff{r: uint32(add_r), g: uint32(add_g), b: uint32(add_b), a: uint32(add_a)}
+}
+
+func InverseMultiplacate(p Pixel_Diff) Pixel_Diff {
+
+	op_r := int(p.r) * k
+	op_g := int(p.g) * k
+	op_b := int(p.b) * k
+	op_a := int(p.a) * k
+
+	return Pixel_Diff{r: uint32(op_r), g: uint32(op_g), b: uint32(op_b), a: uint32(op_a)}
+}
+
+func InverseSubstract(p Pixel_Diff) Pixel_Diff {
+
+	sub_r := int(p.r) - k
+	sub_g := int(p.g) - k
+	sub_b := int(p.b) - k
+	sub_a := int(p.a) - k
+
+	return Pixel_Diff{r: uint32(sub_r), g: uint32(sub_g), b: uint32(sub_b), a: uint32(sub_a)}
 }

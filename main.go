@@ -128,6 +128,8 @@ func main() {
 		// Zoom K Times @params {Level of Zooom and File }
 		zoom_pixels.Zoom_KTime(5, FileInfo)
 
+		zoom_pixels.ZoomOutPixels(FileInfo, 5)
+
 		return c.Render("index", fiber.Map{
 			"Title": "PixelsMetrica",
 		})
