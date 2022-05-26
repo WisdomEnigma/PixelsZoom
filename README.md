@@ -15,3 +15,23 @@
 
     route_name                  method                       
       /                        get, post
+
+# Arch 
+
+ [Upload Image] -> [Zoom_in translator] == (Image)* -> [Zoom_out translator] == (Image)^
+
+  * = Zoom_in , ^ = Zoom_out
+
+  User will upload any image that will Zoom_in. Then translator process and return zoom in pixel image. By default reverse process is enabled so that Zoom_in pixel image will be reversed
+
+# Data
+
+    In images directory, myAvatar.png zoom in pixel image
+    In images directory, myAvatar(1).png zoom out pixel image
+
+    
+# Test Data
+
+    Open images/ myAvatar.png  in vscode or editor click touch pad or double click it will zoom without any blurnessness during scaling. 
+
+    Open images/ myAvatar.png  in vscode or editor click touch pad or double click it will not zoom during scaling . 

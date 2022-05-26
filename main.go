@@ -128,11 +128,13 @@ func main() {
 		// Zoom K Times @params {Level of Zooom and File }
 		zoom_pixels.Zoom_KTime(5, FileInfo)
 
+		// Zoom out pixels reverse process of the image
 		zoom_pixels.ZoomOutPixels(FileInfo, 5)
 
 		return c.Render("index", fiber.Map{
 			"Title": "PixelsMetrica",
 		})
+
 	})
 
 	err := app_web.Listen(":3000")
