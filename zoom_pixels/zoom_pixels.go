@@ -38,6 +38,7 @@ var deltaPixelsAddOps Pixel_Diff
 // sorted picture pixels values
 var zoom []Pixel_Diff
 
+// Inverse specified this variables serve in inverse process (reverse)
 var deltaInverse Pixel_Diff
 var deltaInverseOps Pixel_Diff
 var deltaInverseSubOps Pixel_Diff
@@ -91,10 +92,13 @@ func Zoom_KTime(value int, file *os.File) {
 
 			// log.Println("Pixels Difference", deltaPixels, "Divison:", deltaPixelsOps, "Add:", deltaPixelsAddOps)
 
-			p, q, r := NewImage(deltaPixels, deltaPixelsOps, deltaPixelsAddOps, i)
+			// collect piceces in vector
+			p, q, r := NewImage(deltaPixels, deltaPixelsOps, deltaPixelsAddOps)
 
+			// sort pixel values of collected piceces
 			u, v := Is_Sort(p, q, r)
 
+			// store in memory stack for futher operation
 			zoom = append(zoom, u, v)
 		}
 
@@ -102,6 +106,7 @@ func Zoom_KTime(value int, file *os.File) {
 
 	newPicture := copy_pixels()
 	ZoomPicture(file, newPicture)
+	k = 0
 }
 
 // Zoom Level
@@ -189,12 +194,14 @@ func copy_pixels() *image.Paletted {
 	return image.NewPaletted(image.Rect(0, 0, width*k, height*k), pictureColor)
 }
 
-// basic Functions
+// Set image hold picture pixels values
 func SetImage(im image.Image) { decodeRawImage = im }
 
+// return picture pixels value
 func GetImage() image.Image { return decodeRawImage }
 
-func NewImage(p, q, r Pixel_Diff, i int) (Pixel_Diff, Pixel_Diff, Pixel_Diff) {
+//
+func NewImage(p, q, r Pixel_Diff) (Pixel_Diff, Pixel_Diff, Pixel_Diff) {
 
 	return p, q, r
 }
@@ -258,6 +265,7 @@ func ZoomPicture(file *os.File, newPicture *image.Paletted) {
 	}
 }
 
+// Zoom Out Pixel is inverse process of image zoom in
 func ZoomOutPixels(file *os.File, level int) {
 
 	for i := 0; i < GetImage().Bounds().Max.X; i++ {
@@ -284,19 +292,27 @@ func ZoomOutPixels(file *os.File, level int) {
 				continue
 			}
 
+			// Reverse zoom in process
 			deltaInverse = InverseAddition(colorUnit_r, colorUnit_g, colorUnit_b, colorUnit_a, colorUnit_r0, colorUnit_g0, colorUnit_b0, colorUnit_a0)
 			deltaInverseOps = InverseMultiplacate(deltaInverse)
 			deltaInverseSubOps = InverseSubstract(deltaInverse)
 
-			p, q, r := NewImage(deltaPixels, deltaPixelsOps, deltaPixelsAddOps, i)
+			k = level
 
+			p, q, r := NewImage(deltaInverse, deltaInverseOps, deltaInverseSubOps)
+
+			// sort the pixels in reverse
 			u, v := Is_Sort(p, q, r)
 
+			// hold reverse pixels in reverse array called invZoom
 			invZoom = append(invZoom, u, v)
 		}
 	}
 
+	// create new image by clone the previous image data
 	newPicture := copy_pixels()
+
+	// Picture is ready now
 	ZoomPicture(file, newPicture)
 }
 
