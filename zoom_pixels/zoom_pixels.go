@@ -260,9 +260,10 @@ func ZoomPicture(file *os.File, newPicture *image.Paletted) {
 	err := encoder.Encode(file, newPicture)
 
 	if err != nil {
-		log.Fatalln("picture encode error:", err)
+		log.Fatalln("picture png compression error:", err)
 		return
 	}
+
 }
 
 // Zoom Out Pixel is inverse process of image zoom in
