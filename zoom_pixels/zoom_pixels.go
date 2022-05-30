@@ -104,9 +104,14 @@ func Zoom_KTime(value int, file *os.File) {
 
 	}
 
-	newPicture := copy_pixels(zoom)
+	// copy pixel function scale up image value in vector
+	newPicture := copy_pixel()
+
+	// scale up values transform into image
 	ZoomPicture(file, newPicture)
 
+	// k always zero which means restart in next echo
+	k = 0
 }
 
 // Zoom Level
@@ -188,6 +193,19 @@ func copy_pixels(_zoom []Pixel_Diff) *image.Paletted {
 	for i := range _zoom {
 		pictureColor = []color.Color{
 			color.RGBA64{uint16(_zoom[i].r), uint16(_zoom[i].g), uint16(_zoom[i].b), uint16(_zoom[i].a)},
+		}
+	}
+
+	return image.NewPaletted(image.Rect(0, 0, width*k, height*k), pictureColor)
+}
+
+func copy_pixel() *image.Paletted {
+
+	var pictureColor []color.Color
+
+	for i := range zoom {
+		pictureColor = []color.Color{
+			color.RGBA64{uint16(zoom[i].r), uint16(zoom[i].g), uint16(zoom[i].b), uint16(zoom[i].a)},
 		}
 	}
 
@@ -314,6 +332,8 @@ func ZoomOutPixels(file *os.File, level int) {
 
 	// Picture is ready now
 	ZoomPicture(file, newPicture)
+
+	k = 0
 
 }
 
