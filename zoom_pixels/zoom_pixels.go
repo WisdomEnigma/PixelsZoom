@@ -104,8 +104,13 @@ func Zoom_KTime(value int, file *os.File) {
 
 	}
 
-	newPicture := copy_pixels()
+	// copy pixel function scale up image value in vector
+	newPicture := copy_pixel()
+
+	// scale up values transform into image
 	ZoomPicture(file, newPicture)
+
+	// k always zero which means restart in next echo
 	k = 0
 }
 
@@ -181,7 +186,20 @@ func Add(p Pixel_Diff) Pixel_Diff {
 // var avatar_zoom *image.Paletted
 
 // copy pixels will copy generated pixels data into new image
-func copy_pixels() *image.Paletted {
+func copy_pixels(_zoom []Pixel_Diff) *image.Paletted {
+
+	var pictureColor []color.Color
+
+	for i := range _zoom {
+		pictureColor = []color.Color{
+			color.RGBA64{uint16(_zoom[i].r), uint16(_zoom[i].g), uint16(_zoom[i].b), uint16(_zoom[i].a)},
+		}
+	}
+
+	return image.NewPaletted(image.Rect(0, 0, width*k, height*k), pictureColor)
+}
+
+func copy_pixel() *image.Paletted {
 
 	var pictureColor []color.Color
 
@@ -200,7 +218,6 @@ func SetImage(im image.Image) { decodeRawImage = im }
 // return picture pixels value
 func GetImage() image.Image { return decodeRawImage }
 
-//
 func NewImage(p, q, r Pixel_Diff) (Pixel_Diff, Pixel_Diff, Pixel_Diff) {
 
 	return p, q, r
@@ -306,14 +323,18 @@ func ZoomOutPixels(file *os.File, level int) {
 
 			// hold reverse pixels in reverse array called invZoom
 			invZoom = append(invZoom, u, v)
+
 		}
 	}
 
 	// create new image by clone the previous image data
-	newPicture := copy_pixels()
+	newPicture := copy_pixels(invZoom)
 
 	// Picture is ready now
 	ZoomPicture(file, newPicture)
+
+	k = 0
+
 }
 
 func InverseAddition(r, g, b, a uint32, r0, g0, b0, a0 uint32) Pixel_Diff {
