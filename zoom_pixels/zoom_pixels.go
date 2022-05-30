@@ -104,9 +104,9 @@ func Zoom_KTime(value int, file *os.File) {
 
 	}
 
-	newPicture := copy_pixels()
+	newPicture := copy_pixels(zoom)
 	ZoomPicture(file, newPicture)
-	k = 0
+
 }
 
 // Zoom Level
@@ -181,13 +181,13 @@ func Add(p Pixel_Diff) Pixel_Diff {
 // var avatar_zoom *image.Paletted
 
 // copy pixels will copy generated pixels data into new image
-func copy_pixels() *image.Paletted {
+func copy_pixels(_zoom []Pixel_Diff) *image.Paletted {
 
 	var pictureColor []color.Color
 
-	for i := range zoom {
+	for i := range _zoom {
 		pictureColor = []color.Color{
-			color.RGBA64{uint16(zoom[i].r), uint16(zoom[i].g), uint16(zoom[i].b), uint16(zoom[i].a)},
+			color.RGBA64{uint16(_zoom[i].r), uint16(_zoom[i].g), uint16(_zoom[i].b), uint16(_zoom[i].a)},
 		}
 	}
 
@@ -200,7 +200,6 @@ func SetImage(im image.Image) { decodeRawImage = im }
 // return picture pixels value
 func GetImage() image.Image { return decodeRawImage }
 
-//
 func NewImage(p, q, r Pixel_Diff) (Pixel_Diff, Pixel_Diff, Pixel_Diff) {
 
 	return p, q, r
@@ -260,10 +259,9 @@ func ZoomPicture(file *os.File, newPicture *image.Paletted) {
 	err := encoder.Encode(file, newPicture)
 
 	if err != nil {
-		log.Fatalln("picture png compression error:", err)
+		log.Fatalln("picture encode error:", err)
 		return
 	}
-
 }
 
 // Zoom Out Pixel is inverse process of image zoom in
@@ -307,14 +305,16 @@ func ZoomOutPixels(file *os.File, level int) {
 
 			// hold reverse pixels in reverse array called invZoom
 			invZoom = append(invZoom, u, v)
+
 		}
 	}
 
 	// create new image by clone the previous image data
-	newPicture := copy_pixels()
+	newPicture := copy_pixels(invZoom)
 
 	// Picture is ready now
 	ZoomPicture(file, newPicture)
+
 }
 
 func InverseAddition(r, g, b, a uint32, r0, g0, b0, a0 uint32) Pixel_Diff {
