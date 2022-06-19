@@ -1,8 +1,7 @@
 # PixelsZoom
 
 
-    Pixel Zoom improve image resolution of an image; Image Resolution is determined by many factors such as Level of Zoom, Shading, Object detection and filters . Currently this package only support positive level of zoom; In Future , negative level of zoom will be implemented.
-
+    Pixel Zoom improve image resolution of an image; Image Resolution is determined by many factors such as Level of Zoom, Shading, Object detection and filters.
 
 
 # LISTEN @ 
@@ -16,25 +15,11 @@
     route_name                  method                       
       /                        get, post
 
-# Arch 
-
- [Upload Image] -> [Zoom_in translator] == (Image)* -> [Zoom_out translator] == (Image)^
-
-  * = Zoom_in , ^ = Zoom_out
-
-  User will upload any image that will Zoom_in. Then translator process and return zoom in pixel image. By default reverse process is enabled so that Zoom_in pixel image will be reversed
 
 # Data
 
-    In images directory, myAvatar.png zoom in pixel image
-    In images directory, myAvatar(1).png zoom out pixel image
+    In images directory, scale_4182262970-myAvatar.png (scale-up by Lanczos filtering)
 
-    
-# Test Data
-
-    Open images/ myAvatar.png  in vscode or editor click touch pad or double click it will zoom without any blurnessness during scaling. 
-
-    Open images/ myAvatar.png  in vscode or editor click touch pad or double click it will not zoom during scaling . 
     
 # Bit Transaction 
     
@@ -43,3 +28,8 @@
 # Codespaces
     
     https://ali2210-wisdomenigma-pixelszoom-7pr5vqxg2xrjv.github.dev/
+
+
+# Our apporach:
+
+I build algorithm that resize image of any size. However issue is that we resize image with pixels value and thousand of pixels resize with in a sec. Now the challenge is to regenerate the image through vector. For better view, imagine you will zoom on face of your friend. Reszizer will do that for you with in timeframe which is too short. Review my codebase and send feedback to me.
