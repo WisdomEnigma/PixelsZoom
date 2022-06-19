@@ -12,16 +12,8 @@ import (
 // Set Image dimensions Dimension {Width = 200, Height = 200}
 var width, height int = 200, 200
 
-// const (
-// 	Red int = iota << 1
-// 	Green
-// 	Blue
-// 	AlphaValue
-// )
-
-// type RawImage struct {
-// 	r, g, b, a uint32
-// }
+// docker directory
+var INTERNAL_PATH string = "app_data/"
 
 // decodeRawIamge hold image file pixels data in a form of vector
 var decodeRawImage image.Image
@@ -47,10 +39,10 @@ var invZoom []Pixel_Diff
 // Zoom_KTimes @Parameters( Level of Zoom, File Object)
 // Zoom provide entry point for zoom calculation
 
-func Zoom_KTime(value int, file *os.File) {
+func Zoom_KTime(value int, file *os.File) (*image.Paletted, error) {
 
 	// initialization of attributes
-	zoom = make([]Pixel_Diff, GetImage().Bounds().Max.X*3)
+	zoom = make([]Pixel_Diff, GetImage().Bounds().Max.X+k)
 
 	for i := 0; i < GetImage().Bounds().Max.X; i++ {
 		for j := 0; j < GetImage().Bounds().Max.Y; j++ {
@@ -105,17 +97,24 @@ func Zoom_KTime(value int, file *os.File) {
 	}
 
 	// copy pixel function scale up image value in vector
-	newPicture := copy_pixel()
+	newPicture := copy_pixels(zoom, file)
 
 	// scale up values transform into image
-	ZoomPicture(file, newPicture)
+	// if err := ZoomPicture(file, newPicture); err != nil {
+	// 	log.Fatalln("Error while scaling image: ", err)
+	// 	return err
+	// }
 
 	// k always zero which means restart in next echo
 	k = 0
+	return newPicture, nil
 }
 
 // Zoom Level
 var k int = 0
+
+// skip puxels values
+var count int = 0
 
 // var img *image.RGBA
 
@@ -183,33 +182,29 @@ func Add(p Pixel_Diff) Pixel_Diff {
 	return Pixel_Diff{r: uint32(dr), g: uint32(dg), b: uint32(db), a: uint32(da)}
 }
 
-// var avatar_zoom *image.Paletted
-
 // copy pixels will copy generated pixels data into new image
-func copy_pixels(_zoom []Pixel_Diff) *image.Paletted {
+func copy_pixels(_zoom []Pixel_Diff, file *os.File) *image.Paletted {
 
-	var pictureColor []color.Color
+	pictureColor := make([]color.Color, decodeRawImage.Bounds().Max.X+k*decodeRawImage.Bounds().Max.X+k)
 
 	for i := range _zoom {
-		pictureColor = []color.Color{
+
+		if reflect.DeepEqual(_zoom[i], nil) {
+			continue
+		}
+
+		pictureColor = append(pictureColor, []color.Color{
 			color.RGBA64{uint16(_zoom[i].r), uint16(_zoom[i].g), uint16(_zoom[i].b), uint16(_zoom[i].a)},
+		}...)
+
+		if reflect.DeepEqual(pictureColor[i], nil) {
+			count += 1
+			continue
 		}
+
 	}
 
-	return image.NewPaletted(image.Rect(0, 0, width*k, height*k), pictureColor)
-}
-
-func copy_pixel() *image.Paletted {
-
-	var pictureColor []color.Color
-
-	for i := range zoom {
-		pictureColor = []color.Color{
-			color.RGBA64{uint16(zoom[i].r), uint16(zoom[i].g), uint16(zoom[i].b), uint16(zoom[i].a)},
-		}
-	}
-
-	return image.NewPaletted(image.Rect(0, 0, width*k, height*k), pictureColor)
+	return image.NewPaletted(image.Rect(0, 0, width+k, height+k), pictureColor[count:])
 }
 
 // Set image hold picture pixels values
@@ -270,7 +265,7 @@ func Is_Sort(p, q, r Pixel_Diff) (Pixel_Diff, Pixel_Diff) {
 }
 
 // Zoom Picture allow to create a new picture based on the given pixel values
-func ZoomPicture(file *os.File, newPicture *image.Paletted) {
+func ZoomPicture(file *os.File, newPicture *image.Paletted) error {
 
 	// compression operation should be performed before translation
 	encoder := png.Encoder{CompressionLevel: png.BestCompression}
@@ -278,8 +273,10 @@ func ZoomPicture(file *os.File, newPicture *image.Paletted) {
 
 	if err != nil {
 		log.Fatalln("picture encode error:", err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 // Zoom Out Pixel is inverse process of image zoom in
@@ -328,7 +325,7 @@ func ZoomOutPixels(file *os.File, level int) {
 	}
 
 	// create new image by clone the previous image data
-	newPicture := copy_pixels(invZoom)
+	newPicture := copy_pixels(invZoom, file)
 
 	// Picture is ready now
 	ZoomPicture(file, newPicture)

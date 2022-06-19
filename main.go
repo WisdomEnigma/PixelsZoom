@@ -1,17 +1,32 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"image/png"
+	"io/ioutil"
+	"log"
 	"os"
+	"reflect"
+	"strings"
 
+	direc "github.com/WisdomEnigma/PixelsZoom/dir"
 	"github.com/WisdomEnigma/PixelsZoom/zoom_pixels"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
+	"github.com/nfnt/resize"
 )
 
+var mountDir = os.Getenv("Mounted_Workspace")
+var port = os.Getenv("PORT")
+
 func main() {
+
+	if !strings.Contains(mountDir, "") && !reflect.DeepEqual(mountDir, "3000") {
+
+		log.Fatalln("No working directory specified")
+		panic("No working directory specified")
+	}
+
 	app_web := fiber.New(fiber.Config{
 		Views: html.New("./views", ".hbs"),
 	})
@@ -35,14 +50,13 @@ func main() {
 			code := fiber.StatusInternalServerError
 
 			if err, ok := err.(*fiber.Error); !ok {
-
 				code = err.Code
 			}
 
 			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
 			return c.Status(code).JSON(map[string]interface{}{
 				"code":    code,
-				"message": errors.New("file might be corrupted"),
+				"message": "file might be corrupted",
 			})
 		}
 
@@ -61,12 +75,13 @@ func main() {
 			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
 			return c.Status(code).JSON(map[string]interface{}{
 				"code":    code,
-				"message": errors.New("file might be corrupted"),
+				"message": "file might be corrupted",
 			})
 		}
 
-		// Create new file or open image file
-		FileInfo, err := os.OpenFile(file.Filename, os.O_RDWR|os.O_CREATE, 0755)
+		// // Create new file or open image file
+		// FileInfo, err := os.OpenFile(file.Filename, os.O_RDWR|os.O_CREATE, 0755)
+		mdir, err := direc.Chdir(file.Filename)
 		if err != nil {
 
 			code := fiber.StatusInternalServerError
@@ -79,16 +94,17 @@ func main() {
 			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
 			return c.Status(code).JSON(map[string]interface{}{
 				"code":    code,
-				"message": errors.New("file is locked"),
+				"message": "file don't have credentials",
 			})
 
 		}
 
-		// close the file descriptor
-		defer FileInfo.Close()
+		log.Println("File:", mdir.Name())
+		// // close the file descriptor
+		// defer mdir.Close()
 
 		// check whelther file exists
-		_, err = os.Stat(FileInfo.Name())
+		_, err = os.Stat(mdir.Name())
 		if os.IsExist(err) {
 
 			code := fiber.StatusInternalServerError
@@ -101,13 +117,13 @@ func main() {
 			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
 			return c.Status(code).JSON(map[string]interface{}{
 				"code":    code,
-				"message": errors.New("file properties not provided"),
+				"message": "file credentials are not valid",
 			})
 		}
 
-		// decode image file Image File Format
-		_content, err := png.Decode(FileInfo)
+		read, err := ioutil.ReadFile(file.Filename)
 		if err != nil {
+
 			code := fiber.StatusInternalServerError
 
 			err, ok := err.(*fiber.Error)
@@ -118,18 +134,92 @@ func main() {
 			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
 			return c.Status(code).JSON(map[string]interface{}{
 				"code":    code,
-				"message": errors.New("file properties not provided"),
+				"message": " Read operation failed",
 			})
+
+		}
+
+		err = ioutil.WriteFile(mdir.Name(), read, 0644)
+
+		if err != nil {
+
+			code := fiber.StatusInternalServerError
+
+			err, ok := err.(*fiber.Error)
+			if ok {
+				code = err.Code
+			}
+
+			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
+			return c.Status(code).JSON(map[string]interface{}{
+				"code":    code,
+				"message": " Write operation failed",
+			})
+
+		}
+
+		decode, err := png.Decode(mdir)
+
+		if err != nil {
+
+			code := fiber.StatusInternalServerError
+
+			err, ok := err.(*fiber.Error)
+			if ok {
+				code = err.Code
+			}
+
+			c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
+			return c.Status(code).JSON(map[string]interface{}{
+				"code":    code,
+				"message": " decode operation failed",
+			})
+
 		}
 
 		// Set Image allow to you to set image pixel values
-		zoom_pixels.SetImage(_content)
+		zoom_pixels.SetImage(decode)
 
-		// Zoom K Times @params {Level of Zooom and File }
-		zoom_pixels.Zoom_KTime(5, FileInfo)
+		picture := resize.Resize(50, 50, decode, resize.Lanczos3)
 
+		png.Encode(mdir, picture)
+
+		// Zoom K Times function have two params to scale up shared content; Zoom Ktime return error if scaling is not supported
+		// _newImage, err := zoom_pixels.Zoom_KTime(2, mdir)
+		// if err != nil {
+
+		// 	code := fiber.StatusInternalServerError
+
+		// 	err, ok := err.(*fiber.Error)
+		// 	if ok {
+		// 		code = err.Code
+		// 	}
+
+		// 	c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
+		// 	return c.Status(code).JSON(map[string]interface{}{
+		// 		"code":    code,
+		// 		"message": "scale up resolution corrupted",
+		// 	})
+		// }
+
+		// err = png.Encode(mdir, _newImage)
+		// if err != nil {
+
+		// 	code := fiber.StatusInternalServerError
+
+		// 	err, ok := err.(*fiber.Error)
+		// 	if ok {
+		// 		code = err.Code
+		// 	}
+
+		// 	c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
+		// 	return c.Status(code).JSON(map[string]interface{}{
+		// 		"code":    code,
+		// 		"message": "scale up resolution failed",
+		// 	})
+		// }
 		// Zoom out pixels reverse process of the image
-		zoom_pixels.ZoomOutPixels(FileInfo, 5)
+		//zoom_pixels.ZoomOutPixels(FileInfo, 5)
 
 		return c.Render("index", fiber.Map{
 			"Title": "PixelsMetrica",
@@ -137,7 +227,7 @@ func main() {
 
 	})
 
-	err := app_web.Listen(":3000")
+	err := app_web.Listen(":" + port)
 	if err != nil {
 		panic(err)
 	}
